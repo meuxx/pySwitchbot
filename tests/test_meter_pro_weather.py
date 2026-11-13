@@ -460,3 +460,44 @@ async def test_unavailable_measurements_are_preserved():
     ]
     assert await device.set_weather(MeterProWeatherIcon.SUNNY) is None
     assert sent_keys(device) == [READ, "570f68060101008000", READ]
+
+
+NOT_SET_WEATHER = bytes.fromhex("0164111500")
+
+
+@pytest.mark.asyncio
+async def test_get_weather_not_set():
+    device = create_device()
+    device._send_command.return_value = NOT_SET_WEATHER
+    state = await device.get_weather()
+    assert state["icon"] is MeterProWeatherIcon.NOT_SET
+    assert state["humidity"] is None
+
+
+@pytest.mark.asyncio
+async def test_set_weather_from_not_set():
+    device = create_device()
+    device._send_command_locked_with_retry.side_effect = [
+        NOT_SET_WEATHER,
+        b"\x01",
+        bytes.fromhex("0101148640"),
+    ]
+    assert (
+        await device.set_weather(
+            MeterProWeatherIcon.SUNNY, temperature_c=6.4, humidity=64
+        )
+        is None
+    )
+    assert sent_keys(device) == [READ, "570f68060101148640", READ]
+
+
+@pytest.mark.asyncio
+async def test_set_weather_keeps_not_set_icon():
+    device = create_device()
+    device._send_command_locked_with_retry.side_effect = [
+        NOT_SET_WEATHER,
+        b"\x01",
+        bytes.fromhex("0164148600"),
+    ]
+    assert await device.set_weather(temperature_c=6.4) is None
+    assert sent_keys(device) == [READ, "570f68060164148600", READ]
