@@ -12,3 +12,5 @@ class MeterProWeatherIcon(Enum):
     HEAVY_RAIN = 5
     LIGHT_SNOW = 6
     HEAVY_SNOW = 7
+    # Reported until weather is first set, e.g. when no SwitchBot hub is paired.
+    NOT_SET = 100
